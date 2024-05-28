@@ -26,11 +26,11 @@ Route::get('/glass/{glass}', [GlassController::class, 'show']);
 Route::put('/glass/{glass}', [GlassController::class, 'update']);
 Route::delete('/glass/{glass}', [GlassController::class, 'destroy']);
 
-Route::get('/prescriptions', [PrescriptionController::class, 'index']);
-Route::post('/prescriptions', [PrescriptionController::class, 'store']);
-Route::get('/prescriptions/{prescription}', [PrescriptionController::class, 'show']);
-Route::put('/prescriptions/{prescription}', [PrescriptionController::class, 'update']);
-Route::delete('/prescriptions/{prescription}', [PrescriptionController::class, 'destroy']);
+Route::get('/patients/{patientId}/prescriptions', [PrescriptionController::class, 'index']);
+Route::post('/patients/{patientId}/prescriptions', [PrescriptionController::class, 'store']);
+Route::get('/patients/{patientId}/prescriptions/{prescription}', [PrescriptionController::class, 'show']);
+Route::put('/patients/{patientId}/prescriptions/{prescription}', [PrescriptionController::class, 'update']);
+Route::delete('/patients/{patientId}/prescriptions/{prescription}', [PrescriptionController::class, 'destroy']);
 
 Route::get('/patients', [PatientController::class, 'index']);
 Route::post('/patients', [PatientController::class, 'store']);

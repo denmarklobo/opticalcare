@@ -7,29 +7,24 @@ use Illuminate\Http\Request;
 
 class PrescriptionController extends Controller
 {
-    public function index()
+    public function index($patient_id)
     {
-        $prescriptions = Prescription::all();
+        // Fetch prescriptions for the specified patient ID
+        $prescriptions = Prescription::where('patient_id', $patient_id)->get();
         return response()->json($prescriptions);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, $patient_id)
     {
         try {
             $request->validate([
-                'left_eye_sphere' => 'required|string',
-                'right_eye_sphere' => 'required|string',
-                'left_eye_cylinder' => 'required|string',
-                'right_eye_cylinder' => 'required|string',
-                'left_eye_axis' => 'required|string',
-                'right_eye_axis' => 'required|string',
-                'reading_add' => 'required|string',
-                'best_visual_acuity' => 'required|string',
-                'PD' => 'required|string',
-                'date' => 'required|string',
+                // Validate your request fields here
             ]);
 
-            $prescription = Prescription::create($request->all());
+            // Create a new prescription for the specified patient ID
+            $prescriptionData = $request->all();
+            $prescriptionData['patient_id'] = $patient_id;
+            $prescription = Prescription::create($prescriptionData);
 
             return response()->json($prescription, 201);
         } catch (\Exception $e) {
@@ -37,26 +32,27 @@ class PrescriptionController extends Controller
         }
     }
 
-    public function show(Prescription $prescription)
+    public function show($patient_id, Prescription $prescription)
     {
+        // Make sure the requested prescription belongs to the specified patient
+        if ($prescription->patient_id != $patient_id) {
+            return response()->json(['error' => 'Prescription not found for the specified patient'], 404);
+        }
+
         return response()->json($prescription);
     }
 
-    public function update(Request $request, Prescription $prescription)
+    public function update(Request $request, $patient_id, Prescription $prescription)
     {
         try {
             $request->validate([
-                'left_eye_sphere' => 'required|string',
-                'right_eye_sphere' => 'required|string',
-                'left_eye_cylinder' => 'required|string',
-                'right_eye_cylinder' => 'required|string',
-                'left_eye_axis' => 'required|string',
-                'right_eye_axis' => 'required|string',
-                'reading_add' => 'required|string',
-                'best_visual_acuity' => 'required|string',
-                'PD' => 'required|string',
-                'date' => 'required|string',
+                // Validate your request fields here
             ]);
+
+            // Update the prescription if it belongs to the specified patient
+            if ($prescription->patient_id != $patient_id) {
+                return response()->json(['error' => 'Prescription not found for the specified patient'], 404);
+            }
 
             $prescription->update($request->all());
 
@@ -66,9 +62,14 @@ class PrescriptionController extends Controller
         }
     }
 
-    public function destroy(Prescription $prescription)
+    public function destroy($patient_id, Prescription $prescription)
     {
         try {
+            // Make sure the requested prescription belongs to the specified patient
+            if ($prescription->patient_id != $patient_id) {
+                return response()->json(['error' => 'Prescription not found for the specified patient'], 404);
+            }
+
             $prescription->delete();
 
             return response()->json(null, 204);

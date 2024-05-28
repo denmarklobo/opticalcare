@@ -18,15 +18,13 @@ class PatientController extends Controller
     {
         try {
             $request->validate([
-                'fname' => 'required',
-                'lname' => 'required',
                 'email' => 'required|email|unique:patients',
                 'password' => 'required|min:6',
-            ]);
+            ]); 
 
-            $patient = Patient::create($request->all());
+            $patients = Patient::create($request->all());
 
-            return response()->json($patient, 201);
+            return response()->json($patients, 201);
         } catch (ValidationException $e) {
             return response()->json(['error' => $e->errors()], 422);
         } catch (\Exception $e) {
@@ -43,8 +41,6 @@ class PatientController extends Controller
     {
         try {
             $request->validate([
-                'fname' => 'required',
-                'lname' => 'required',
                 'email' => 'required|email|unique:patients,email,' . $patient->id,
                 'password' => 'required|min:6',
             ]);

@@ -24,6 +24,8 @@ class CreatePrescriptionsTable extends Migration
             $table->string('best_visual_acuity')->nullable();
             $table->string('PD')->nullable();
             $table->string('date')->nullable();
+            $table->unsignedBigInteger('patient_id')->nullable(); // Add the foreign key column
+            $table->foreign('patient_id')->references('id')->on('patients')->onDelete('set null'); // Define the foreign key constraint
             $table->timestamps();
         });
     }

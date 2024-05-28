@@ -17,6 +17,8 @@ class CreateGlassTable extends Migration
             $table->string('frame')->nullable();
             $table->string('type_of_lens')->nullable();
             $table->text('remarks')->nullable();
+            $table->unsignedBigInteger('patient_id')->nullable(); // Add the foreign key column
+            $table->foreign('patient_id')->references('id')->on('patients')->onDelete('set null'); // Define the foreign key constraint
             $table->timestamps();
         });
     }
