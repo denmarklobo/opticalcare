@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Prescription;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class PrescriptionController extends Controller
 {
@@ -14,7 +15,7 @@ class PrescriptionController extends Controller
         return response()->json($prescriptions);
     }
 
-    public function store(Request $request, $patient_id)
+    public function store(Request $request)
     {
         try {
             $request->validate([
@@ -23,7 +24,6 @@ class PrescriptionController extends Controller
 
             // Create a new prescription for the specified patient ID
             $prescriptionData = $request->all();
-            $prescriptionData['patient_id'] = $patient_id;
             $prescription = Prescription::create($prescriptionData);
 
             return response()->json($prescription, 201);
@@ -32,17 +32,21 @@ class PrescriptionController extends Controller
         }
     }
 
-    public function show($patient_id, Prescription $prescription)
+    public function show($patient_id, $prescription_id)
     {
-        // Make sure the requested prescription belongs to the specified patient
-        if ($prescription->patient_id != $patient_id) {
+        // Fetch the prescription for the specified patient ID and prescription ID
+        $prescription = Prescription::where('patient_id', $patient_id)
+                                     ->where('prescription_id', $prescription_id)
+                                     ->first();
+
+        if (!$prescription) {
             return response()->json(['error' => 'Prescription not found for the specified patient'], 404);
         }
 
         return response()->json($prescription);
     }
 
-    public function update(Request $request, $patient_id, Prescription $prescription)
+    public function update(Request $request, $patient_id, $prescription_id)
     {
         try {
             $request->validate([
@@ -50,7 +54,11 @@ class PrescriptionController extends Controller
             ]);
 
             // Update the prescription if it belongs to the specified patient
-            if ($prescription->patient_id != $patient_id) {
+            $prescription = Prescription::where('patient_id', $patient_id)
+                                         ->where('id', $prescription_id)
+                                         ->first();
+
+            if (!$prescription) {
                 return response()->json(['error' => 'Prescription not found for the specified patient'], 404);
             }
 
@@ -62,19 +70,36 @@ class PrescriptionController extends Controller
         }
     }
 
-    public function destroy($patient_id, Prescription $prescription)
-    {
-        try {
-            // Make sure the requested prescription belongs to the specified patient
-            if ($prescription->patient_id != $patient_id) {
-                return response()->json(['error' => 'Prescription not found for the specified patient'], 404);
+        public function destroy(Request $request, $patient_id, $prescription_id)
+        {
+            // Validate the request parameters
+            $validator = Validator::make([
+                'patient_id' => $patient_id,
+                'id' => $prescription_id,
+            ], [
+                'patient_id' => 'required|integer|exists:patients,id',
+                'id' => 'required|integer|exists:prescriptions,id',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()], 400);
             }
 
-            $prescription->delete();
+            try {
+                // Find the prescription
+                $prescription = Prescription::findOrFail($prescription_id);
 
-            return response()->json(null, 204);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+                // Check if the prescription belongs to the specified patient
+                if ($prescription->patient_id == $patient_id) {
+                    // Delete the prescription
+                    $prescription->delete();
+
+                    return response()->json(['message' => 'Prescription deleted successfully'], 200);
+                } else {
+                    return response()->json(['error' => 'Prescription not found for the specified patient'], 404);
+                }
+            } catch (\Exception $e) {
+                return response()->json(['error' => 'Failed to delete prescription', 'message' => $e->getMessage()], 500);
+            }
         }
     }
-}

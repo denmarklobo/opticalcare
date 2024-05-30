@@ -9,7 +9,9 @@ class Prescription extends Model
 {
     use HasFactory;
 
+
     protected $fillable = [
+        'patient_id',
         'left_eye_sphere',
         'right_eye_sphere',
         'left_eye_cylinder',
@@ -21,4 +23,9 @@ class Prescription extends Model
         'PD',
         'date',
     ];
+
+    public function patient()
+    {
+        return $this->belongsTo(Patient::class, 'patient_id');
+    }
 }

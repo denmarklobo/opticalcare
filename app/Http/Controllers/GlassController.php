@@ -7,22 +7,25 @@ use Illuminate\Http\Request;
 
 class GlassController extends Controller
 {
-    public function index()
+    public function index($patient_id)
     {
-        $glass = Glass::all();
-        return response()->json($glass);
+        // Fetch prescriptions for the specified patient ID (assuming Glass model)
+        $glasses = Glass::where('patient_id', $patient_id)->get();
+        return response()->json($glasses);
     }
 
     public function store(Request $request)
     {
         try {
             $request->validate([
-                'frame' => 'nullable|string',
-                'type_of_lens' => 'nullable|string',
-                'remarks' => 'nullable|string',
+                // Validate your request fields here
+                'patient_id' => 'required',
+                // Add other validation rules as needed
             ]);
 
-            $glass = Glass::create($request->all());
+            // Create a new prescription for the specified patient ID (assuming Glass model)
+            $glassData = $request->all();
+            $glass = Glass::create($glassData);
 
             return response()->json($glass, 201);
         } catch (\Exception $e) {
@@ -30,19 +33,37 @@ class GlassController extends Controller
         }
     }
 
-    public function show(Glass $glass)
+    public function show($patient_id, $glass_id)
     {
+        // Fetch the prescription for the specified patient ID and glass ID (assuming Glass model)
+        $glass = Glass::where('patient_id', $patient_id)
+                      ->where('id', $glass_id)
+                      ->first();
+
+        if (!$glass) {
+            return response()->json(['error' => 'Glass not found for the specified patient'], 404);
+        }
+
         return response()->json($glass);
     }
 
-    public function update(Request $request, Glass $glass)
+    public function update(Request $request, $patient_id, $glass_id)
     {
         try {
             $request->validate([
-                'frame' => 'nullable|string',
-                'type_of_lens' => 'nullable|string',
-                'remarks' => 'nullable|string',
+                // Validate your request fields here
+                'patient_id' => 'required',
+                // Add other validation rules as needed
             ]);
+
+            // Update the prescription if it belongs to the specified patient (assuming Glass model)
+            $glass = Glass::where('patient_id', $patient_id)
+                          ->where('id', $glass_id)
+                          ->first();
+
+            if (!$glass) {
+                return response()->json(['error' => 'Glass not found for the specified patient'], 404);
+            }
 
             $glass->update($request->all());
 
@@ -52,9 +73,18 @@ class GlassController extends Controller
         }
     }
 
-    public function destroy(Glass $glass)
+    public function destroy($patient_id, $glass_id)
     {
         try {
+            // Delete the prescription if it belongs to the specified patient (assuming Glass model)
+            $glass = Glass::where('patient_id', $patient_id)
+                          ->where('id', $glass_id)
+                          ->first();
+
+            if (!$glass) {
+                return response()->json(['error' => 'Glass not found for the specified patient'], 404);
+            }
+
             $glass->delete();
 
             return response()->json(null, 204);
