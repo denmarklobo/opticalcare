@@ -10,12 +10,14 @@ class History extends Model
     use HasFactory;
 
     protected $fillable = [
+        'patient_id',
         'history_updated',
         'medical_history',
         'ocular_history',
     ];
 
-    protected $dates = [
-        'history_updated',
-    ];
+    public function patient()
+    {
+        return $this->belongsTo(Patient::class, 'patient_id');
+    }
 }

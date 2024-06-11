@@ -10,7 +10,6 @@ class PrescriptionController extends Controller
 {
     public function index($patient_id)
     {
-        // Fetch prescriptions for the specified patient ID
         $prescriptions = Prescription::where('patient_id', $patient_id)->get();
         return response()->json($prescriptions);
     }

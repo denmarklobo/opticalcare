@@ -10,8 +10,13 @@ class Glass extends Model
     use HasFactory;
 
     protected $fillable = [
+        'patient_id',
         'frame',
         'type_of_lens',
         'remarks',
     ];
+     public function patient()
+    {
+        return $this->belongsTo(Patient::class, 'patient_id');
+    }
 }

@@ -4,33 +4,50 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
-{
+{ 
     public function index()
-    {
-        $products = Product::all();
-        return response()->json($products);
-    }
+{
+    $products = Product::all()->map(function ($product) {
+        $product->image = asset('storage/' . $product->image);
+        return $product;
+    });
+    return response()->json($products);
+}
 
     public function store(Request $request)
     {
-        try {
-            $request->validate([
-                'product_id' => 'nullable|string',
-                'product_name' => 'nullable|string',
-                'supplier' => 'nullable|string',
-                'quantity' => 'nullable|integer',
-                'price' => 'nullable|numeric',
-                'image' => 'nullable|string',
-            ]);
+        $validator = Validator::make($request->all(), [
+            'product_name' => 'required|string',
+            'supplier' => 'nullable|string',
+            'quantity' => 'required|integer',
+            'price' => 'required|numeric',
+            'product_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
 
-            $product = Product::create($request->all());
-
-            return response()->json($product, 201);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
         }
+
+        $productImage = null;
+        if ($request->hasFile('product_image')) {
+            $productImage = $request->file('product_image')->store('product_images', 'public');
+        }
+
+        $product = new Product([
+            'product_name' => $request->product_name,
+            'supplier' => $request->supplier,
+            'quantity' => $request->quantity,
+            'price' => $request->price,
+            'image' => $productImage,
+        ]);
+
+        $product->save();
+
+        return response()->json($product, 201);
     }
 
     public function show(Product $product)
@@ -40,32 +57,13 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
-        try {
-            $request->validate([
-                'product_id' => 'nullable|string',
-                'product_name' => 'nullable|string',
-                'supplier' => 'nullable|string',
-                'quantity' => 'nullable|integer',
-                'price' => 'nullable|numeric',
-                'image' => 'nullable|string',
-            ]);
-
-            $product->update($request->all());
-
-            return response()->json($product, 200);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        $product->update($request->all());
+        return response()->json(['message' => 'Product updated successfully', 'product' => $product]);
     }
 
     public function destroy(Product $product)
     {
-        try {
-            $product->delete();
-
-            return response()->json(null, 204);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        $product->delete();
+        return response()->json(['message' => 'Product deleted successfully']);
     }
 }

@@ -17,8 +17,15 @@ class Patient extends Model
         'birthdate',
         'password',
     ];
+
+     public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function prescription()
     {
-        return $this->hasMany(Patient::class, 'prescription_id');
+        return $this->hasMany(Prescription::class);
     }
+    
 }

@@ -4,17 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage; // Corrected namespace for Storage facade
 
 class Product extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'product_id',
-        'product_name',
-        'supplier',
-        'quantity',
-        'price',
+        'product_name', 
+        'supplier', 
+        'quantity', 
+        'price', 
         'image',
     ];
 }

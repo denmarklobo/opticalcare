@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Patient;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 class PatientController extends Controller
 {
@@ -14,17 +16,37 @@ class PatientController extends Controller
         return response()->json($patients);
     }
 
-    public function store(Request $request)
+   public function store(Request $request)
     {
         try {
             $request->validate([
                 'email' => 'required|email|unique:patients',
+                'full_name' => 'required',
                 'password' => 'required|min:6',
+                'address' => 'required',
+                'contact' => 'required',
+                'birthdate' => 'required|date',
             ]); 
 
-            $patients = Patient::create($request->all());
+            $hashedPassword = Hash::make($request->password);
 
-            return response()->json($patients, 201);
+            $user = User::create([
+                'name' => $request->full_name,
+                'email' => $request->email,
+                'password' => $hashedPassword,
+            ]);
+
+            $patient = Patient::create([
+                'user_id' => $user->id,
+                'full_name' => $request->full_name,
+                'email' => $request->email,
+                'address' => $request->address,
+                'contact' => $request->contact,
+                'birthdate' => $request->birthdate,
+                'password' => $hashedPassword, 
+            ]);
+
+            return response()->json($patient, 201);
         } catch (ValidationException $e) {
             return response()->json(['error' => $e->errors()], 422);
         } catch (\Exception $e) {
@@ -32,9 +54,14 @@ class PatientController extends Controller
         }
     }
 
-    public function show(Patient $patient)
+    public function show($id)
     {
-        return response()->json($patient);
+       try {
+            $patient = Patient::findOrFail($id);
+            return response()->json($patient);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Patient not found'], 404);
+        }
     }
 
     public function update(Request $request, Patient $patient)
