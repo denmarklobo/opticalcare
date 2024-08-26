@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\Storage;
 class ProductController extends Controller
 { 
     public function index()
-{
-    $products = Product::all()->map(function ($product) {
-        $product->image = asset('storage/' . $product->image);
-        return $product;
-    });
-    return response()->json($products);
-}
+    {
+        $products = Product::all()->map(function ($product) {
+            $product->image = asset('http://127.0.0.1:8000/' . $product->image);
+            return $product;
+        });
+        return response()->json($products);
+    }
 
     public function store(Request $request)
     {
@@ -55,15 +55,45 @@ class ProductController extends Controller
         return response()->json($product);
     }
 
-    public function update(Request $request, Product $product)
+    public function update(Request $request, $id)
     {
-        $product->update($request->all());
-        return response()->json(['message' => 'Product updated successfully', 'product' => $product]);
-    }
+        try {
+            $product = Product::findOrFail($id);
 
+            // Validate incoming request data
+            $request->validate([
+                'product_name' => 'required|string',
+                'supplier' => 'required|string',
+                'quantity' => 'required|integer',
+                'price' => 'required|numeric',
+            ]);
+
+            // Update product attributes
+            $product->product_name = $request->input('product_name');
+            $product->supplier = $request->input('supplier');
+            $product->quantity = $request->input('quantity');
+            $product->price = $request->input('price');
+
+            // Save the updated product
+            $product->save();
+
+            return response()->json($product);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Product not found or could not be updated'], 404);
+        }
+    }
     public function destroy(Product $product)
     {
         $product->delete();
         return response()->json(['message' => 'Product deleted successfully']);
     }
+
+    public function getLatestProducts()
+    {
+        // Fetch the latest 4 products
+        $products = Product::orderBy('created_at', 'desc')->take(4)->get();
+
+        return response()->json($products);
+    }
+
 }

@@ -8,14 +8,31 @@ use App\Http\Controllers\GlassController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ReservationController;
 
 Route::post('/login', [LoginController::class, 'authenticate']);
 
 Route::post('/products', [ProductController::class, 'store']);
 Route::get('/products', [ProductController::class, 'index']);
-Route::put('/products/{id}', [ProductController::class, 'update']);
+Route::put('/products/{product}', [ProductController::class, 'update']);
 Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+Route::get('/products/latest', [ProductController::class, 'getLatestProducts']);
 
+Route::post('/reserve', [ReservationController::class, 'store']);
+Route::get('/reservations', [ReservationController::class, 'accepted']);
+Route::get('/reservations/pending', [ReservationController::class, 'pending']);
+Route::get('/reservations/picked_up', [ReservationController::class, 'pickedUp']);
+
+Route::get('/reservations/total', [ReservationController::class, 'index']);
+Route::get('/reservations/counts', [ReservationController::class, 'reservationStatusCounts']);
+Route::get('/accounts/created-per-month', [ReservationController::class, 'accountsCreatedPerMonth']);
+
+Route::put('/reservations/{id}/accept', [ReservationController::class, 'accept']);
+Route::put('/reservations/{id}/decline', [ReservationController::class, 'decline']);
+Route::put('/reservations/{id}/picked_up', [ReservationController::class, 'pickUp']);
+
+Route::get('/reservations/{patientId}', [ReservationController::class, 'getUserReservations']);
+Route::delete('/reservations/{reservationId}', [ReservationController::class, 'cancelReservation']);
 
 Route::prefix('patients')->group(function () {
 

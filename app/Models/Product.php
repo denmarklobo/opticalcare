@@ -17,4 +17,9 @@ class Product extends Model
         'price', 
         'image',
     ];
+
+      public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
+    }
 }

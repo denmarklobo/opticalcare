@@ -64,22 +64,37 @@ class PatientController extends Controller
         }
     }
 
-    public function update(Request $request, Patient $patient)
+    public function update(Request $request, $id)
     {
-        try {
-            $request->validate([
-                'email' => 'required|email|unique:patients,email,' . $patient->id,
-                'password' => 'required|min:6',
-            ]);
+        $request->validate([
+            'address' => 'required|string',
+            'contact' => 'required|string',
+            'email' => 'required|string|email',
+            'password' => 'nullable|string',
+            'newPassword' => 'nullable|string|min:6',
+        ]);
 
-            $patient->update($request->all());
+        $patient = Patient::findOrFail($id);
+        $user = $patient->user; // Assuming there is a relation between Patient and User
 
-            return response()->json($patient, 200);
-        } catch (ValidationException $e) {
-            return response()->json(['error' => $e->errors()], 422);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        if ($request->has('password') && !Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages(['password' => ['The provided password is incorrect.']]);
         }
+
+        $patient->address = $request->address;
+        $patient->contact = $request->contact;
+        $patient->email = $request->email;
+
+        if ($request->filled('newPassword')) {
+            $user->password = Hash::make($request->newPassword);
+        }
+
+        $user->email = $request->email;
+        
+        $patient->save();
+        $user->save();
+
+        return response()->json(['message' => 'Patient information updated successfully'], 200);
     }
 
     public function destroy(Patient $patient)

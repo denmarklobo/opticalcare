@@ -22,6 +22,10 @@ class CreatePatientsTable extends Migration
             $table->date('birthdate')->nullable();
             $table->string('password');
             $table->timestamps();
+            $table->unsignedBigInteger('user_id')->nullable();
+            
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
+         
         });
     }
 

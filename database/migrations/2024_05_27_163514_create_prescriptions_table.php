@@ -13,7 +13,7 @@ class CreatePrescriptionsTable extends Migration
     public function up()
     {
         Schema::create('prescriptions', function (Blueprint $table) {
-            $table->id('prescription_id');
+            $table->id();
             $table->string('left_eye_sphere')->nullable();
             $table->string('right_eye_sphere')->nullable();
             $table->string('left_eye_cylinder')->nullable();

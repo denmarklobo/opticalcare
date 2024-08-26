@@ -13,7 +13,7 @@ class CreateGlassTable extends Migration
     public function up()
     {
         Schema::create('glasses', function (Blueprint $table) {
-            $table->id('glass_id');
+            $table->id();
             $table->string('frame')->nullable();
             $table->string('type_of_lens')->nullable();
             $table->text('remarks')->nullable();

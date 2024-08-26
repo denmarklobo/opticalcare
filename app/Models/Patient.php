@@ -16,6 +16,7 @@ class Patient extends Model
         'contact',
         'birthdate',
         'password',
+        'user_id',
     ];
 
      public function user()
@@ -26,6 +27,11 @@ class Patient extends Model
     public function prescription()
     {
         return $this->hasMany(Prescription::class);
+    }
+    
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
     }
     
 }
