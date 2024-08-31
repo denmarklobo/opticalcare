@@ -19,7 +19,7 @@ class CreateProductsTable extends Migration
             $table->string('supplier');
             $table->integer('quantity');
             $table->decimal('price', 10, 2);
-            $table->string('image')->nullable();
+            $table->json('image')->nullable();
             $table->timestamps();
         });
     }

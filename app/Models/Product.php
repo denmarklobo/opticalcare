@@ -18,6 +18,10 @@ class Product extends Model
         'image',
     ];
 
+    protected $casts = [
+        'images' => 'array', // Cast images as an array
+    ];
+
       public function reservations()
     {
         return $this->hasMany(Reservation::class);

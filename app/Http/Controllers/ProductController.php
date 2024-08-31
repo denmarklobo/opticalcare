@@ -12,9 +12,20 @@ class ProductController extends Controller
     public function index()
     {
         $products = Product::all()->map(function ($product) {
-            $product->image = asset('http://127.0.0.1:8000/' . $product->image);
+            // Decode the JSON array of images
+            $images = json_decode($product->image);
+
+            // Check if there are any images and get the first one
+            if (!empty($images) && is_array($images)) {
+                $firstImage = $images[0]; // Get the first image path
+                $product->image = asset('http://127.0.0.1:8000/' . $firstImage); // Use asset helper to generate URL
+            } else {
+                $product->image = null; // Set to null if no images found
+            }
+
             return $product;
         });
+
         return response()->json($products);
     }
 
@@ -25,24 +36,32 @@ class ProductController extends Controller
             'supplier' => 'nullable|string',
             'quantity' => 'required|integer',
             'price' => 'required|numeric',
-            'product_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'product_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Update this rule to handle multiple images
         ]);
 
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 400);
         }
 
-        $productImage = null;
-        if ($request->hasFile('product_image')) {
-            $productImage = $request->file('product_image')->store('product_images', 'public');
+        // Initialize an array to hold image paths
+        $productImages = [];
+
+        // Check if there are images in the request
+        if ($request->hasFile('product_images')) {
+            foreach ($request->file('product_images') as $image) {
+                // Store each image and add its path to the array
+                $path = $image->store('product_images', 'public');
+                $productImages[] = $path;
+            }
         }
 
+        // Create a new product with the given details and save image paths as JSON
         $product = new Product([
             'product_name' => $request->product_name,
             'supplier' => $request->supplier,
             'quantity' => $request->quantity,
             'price' => $request->price,
-            'image' => $productImage,
+            'image' => json_encode($productImages), // Store multiple images as a JSON array
         ]);
 
         $product->save();
@@ -50,8 +69,28 @@ class ProductController extends Controller
         return response()->json($product, 201);
     }
 
-    public function show(Product $product)
+
+    public function show($id)
     {
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+
+        // Decode the JSON array of images
+        $images = json_decode($product->image);
+
+        // Check if there are any images and process them
+        if (!empty($images) && is_array($images)) {
+            // Map each image path to its full URL
+            $product->images = array_map(function ($image) {
+                return asset('http://127.0.0.1:8000/' . $image);
+            }, $images);
+        } else {
+            $product->images = []; // Return an empty array if no images found
+        }
+
         return response()->json($product);
     }
 
@@ -91,9 +130,25 @@ class ProductController extends Controller
     public function getLatestProducts()
     {
         // Fetch the latest 4 products
-        $products = Product::orderBy('created_at', 'desc')->take(4)->get();
+        $products = Product::orderBy('created_at', 'desc')->take(4)->get()->map(function ($product) {
+            // Decode the JSON array of images
+            $images = json_decode($product->image);
+
+            // Check if there are any images and get the first one
+            if (!empty($images) && is_array($images)) {
+                // Get the first image path
+                $firstImage = $images[0];
+                // Generate URL for the first image
+                $product->image = asset('http://127.0.0.1:8000/' . $firstImage); // Assuming images are stored in 'storage/app/public/product_images'
+            } else {
+                $product->image = null; // Set to null if no images found
+            }
+
+            return $product;
+        });
 
         return response()->json($products);
     }
+
 
 }
