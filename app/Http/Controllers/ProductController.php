@@ -29,6 +29,31 @@ class ProductController extends Controller
         return response()->json($products);
     }
 
+    public function newIndex()
+    {
+        $products = Product::all()->map(function ($product) {
+            // Decode the JSON array of images
+            $images = json_decode($product->image);
+
+            // Check if there are any images
+            if (!empty($images) && is_array($images)) {
+                // Map each image path to its URL
+                $product->images = array_map(function ($image) {
+                    return asset('http://127.0.0.1:8000/' . $image);
+                }, $images);
+            } else {
+                $product->images = []; // Set to an empty array if no images found
+            }
+
+            // Optionally, remove the original image attribute if you only want to return the new images attribute
+            unset($product->image);
+
+            return $product;
+        });
+
+        return response()->json($products);
+    }
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -36,7 +61,9 @@ class ProductController extends Controller
             'supplier' => 'nullable|string',
             'quantity' => 'required|integer',
             'price' => 'required|numeric',
-            'product_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Update this rule to handle multiple images
+            'product_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
+            'gender' => 'required|in:Men,Women,Unisex',
+            'type' => 'required|in:Frames,Lens,Contact Lenses,Accessories',
         ]);
 
         if ($validator->fails()) {
@@ -62,6 +89,8 @@ class ProductController extends Controller
             'quantity' => $request->quantity,
             'price' => $request->price,
             'image' => json_encode($productImages), // Store multiple images as a JSON array
+            'gender' => $request->input('gender'),
+            'type' => $request->input('type'),
         ]);
 
         $product->save();

@@ -20,6 +20,9 @@ class CreateProductsTable extends Migration
             $table->integer('quantity');
             $table->decimal('price', 10, 2);
             $table->json('image')->nullable();
+            // Adding ENUM fields for gender and type
+            $table->enum('gender', ['Men', 'Women', 'Unisex']);
+            $table->enum('type', ['Frames', 'Lens', 'Contact Lenses', 'Accessories']);
             $table->timestamps();
         });
     }

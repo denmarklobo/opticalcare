@@ -14,6 +14,7 @@ Route::post('/login', [LoginController::class, 'authenticate']);
 
 Route::post('/products', [ProductController::class, 'store']);
 Route::get('/products', [ProductController::class, 'index']);
+Route::get('/allProducts', [ProductController::class, 'newIndex']);
 Route::get('/viewProduct/{id}', [ProductController::class, 'show']);
 Route::put('/products/{product}', [ProductController::class, 'update']);
 Route::delete('/products/{product}', [ProductController::class, 'destroy']);
