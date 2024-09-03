@@ -9,8 +9,12 @@ use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\AdminController;
 
 Route::post('/login', [LoginController::class, 'authenticate']);
+Route::get('/authlogin', [AdminController::class, 'login']);
+Route::post('/authlogin', [AdminController::class, 'login']);
+Route::post('/storeadmin', [AdminController::class, 'store']);
 
 Route::post('/products', [ProductController::class, 'store']);
 Route::get('/products', [ProductController::class, 'index']);
