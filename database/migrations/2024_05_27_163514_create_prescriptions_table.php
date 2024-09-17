@@ -21,7 +21,8 @@ class CreatePrescriptionsTable extends Migration
             $table->string('left_eye_axis')->nullable();
             $table->string('right_eye_axis')->nullable();
             $table->string('reading_add')->nullable();
-            $table->string('best_visual_acuity')->nullable();
+            $table->string('left_eye_best_visual_acuity')->nullable();
+            $table->string('right_eye_best_visual_acuity')->nullable();
             $table->string('PD')->nullable();
             $table->string('date')->nullable();
             $table->unsignedBigInteger('patient_id')->nullable(); // Add the foreign key column

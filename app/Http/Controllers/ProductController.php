@@ -61,9 +61,10 @@ class ProductController extends Controller
             'supplier' => 'nullable|string',
             'quantity' => 'required|integer',
             'price' => 'required|numeric',
-            'product_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
+            'product_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'gender' => 'required|in:Men,Women,Unisex',
             'type' => 'required|in:Frames,Lens,Contact Lenses,Accessories',
+            'color_stock' => 'required|json', // Validate that color_stock is a valid JSON object
         ]);
 
         if ($validator->fails()) {
@@ -82,7 +83,7 @@ class ProductController extends Controller
             }
         }
 
-        // Create a new product with the given details and save image paths as JSON
+        // Create a new product with the given details and save image paths and color_stock as JSON
         $product = new Product([
             'product_name' => $request->product_name,
             'supplier' => $request->supplier,
@@ -91,6 +92,7 @@ class ProductController extends Controller
             'image' => json_encode($productImages), // Store multiple images as a JSON array
             'gender' => $request->input('gender'),
             'type' => $request->input('type'),
+            'color_stock' => $request->input('color_stock'), // Store color_stock JSON as is
         ]);
 
         $product->save();

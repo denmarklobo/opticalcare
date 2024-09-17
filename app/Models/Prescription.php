@@ -19,7 +19,8 @@ class Prescription extends Model
         'left_eye_axis',
         'right_eye_axis',
         'reading_add',
-        'best_visual_acuity',
+        'left_eye_best_visual_acuity',
+        'right_eye_best_visual_acuity',
         'PD',
         'date',
     ];

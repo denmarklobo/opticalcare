@@ -17,6 +17,7 @@ class CreateProductsTable extends Migration
             $table->id();
             $table->string('product_name');
             $table->string('supplier');
+            $table->json('color_stock');
             $table->integer('quantity');
             $table->decimal('price', 10, 2);
             $table->json('image')->nullable();

@@ -77,19 +77,24 @@ class ReservationController extends Controller
 
    public function store(Request $request)
     {
+        // Validate the incoming request data, including the color
         $validatedData = $request->validate([
             'product_id' => 'required|exists:products,id',
             'product_name' => 'required|string',
             'user_id' => 'required|exists:users,id',
+            'color' => 'required|string',  // Add validation for color
         ]);
 
+        // Create a new reservation with the validated data
         $reservation = Reservation::create([
             'user_id' => $validatedData['user_id'],
             'product_id' => $validatedData['product_id'],
             'product_name' => $validatedData['product_name'],
+            'color' => $validatedData['color'],  // Store the color
             'status' => 'pending',
         ]);
 
+        // Return a JSON response with the created reservation
         return response()->json($reservation, 201);
     }
 
@@ -186,10 +191,10 @@ class ReservationController extends Controller
         return response()->json(['message' => 'Reservation cancelled successfully']);
     }
 
-     public function pickUp($id)
+    public function pickUp($id)
     {
         Log::info("Attempting to pick up reservation with ID: $id");
-        
+
         $reservation = Reservation::findOrFail($id);
 
         if ($reservation->status === 'picked_up') {
@@ -201,9 +206,36 @@ class ReservationController extends Controller
         $reservation->save();
 
         $product = Product::findOrFail($reservation->product_id);
+
         if ($product->quantity > 0) {
+            // Update the product quantity
             $product->quantity -= 1;
-            $product->save();
+
+            // Decode the color_stock JSON field
+            $colorStocks = json_decode($product->color_stock, true);
+
+            // Flag to check if the color was updated
+            $colorUpdated = false;
+
+            // Update the color-specific stock
+            foreach ($colorStocks as &$colorStock) {
+                if ($colorStock['color'] === $reservation->color) {
+                    $colorStock['stock'] -= 1;
+                    if ($colorStock['stock'] < 0) {
+                        $colorStock['stock'] = 0; // Ensure stock does not go below zero
+                    }
+                    $colorUpdated = true;
+                    break;
+                }
+            }
+
+            if ($colorUpdated) {
+                // Encode the updated color_stock back to JSON
+                $product->color_stock = json_encode($colorStocks);
+                $product->save();
+            } else {
+                return response()->json(['message' => 'Color stock not found'], 400);
+            }
         } else {
             return response()->json(['message' => 'Product is out of stock'], 400);
         }
