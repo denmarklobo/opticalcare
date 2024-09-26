@@ -20,7 +20,7 @@ Route::post('/products', [ProductController::class, 'store']);
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/allProducts', [ProductController::class, 'newIndex']);
 Route::get('/viewProduct/{id}', [ProductController::class, 'show']);
-Route::put('/products/{product}', [ProductController::class, 'update']);
+Route::put('/products/{id}', [ProductController::class, 'update']);
 Route::delete('/products/{product}', [ProductController::class, 'destroy']);
 Route::get('/products/latest', [ProductController::class, 'getLatestProducts']);
 

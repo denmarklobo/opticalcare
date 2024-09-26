@@ -14,9 +14,23 @@ class Glass extends Model
         'frame',
         'type_of_lens',
         'remarks',
+        'product_id',
+        'lens_id',
+        'price'
     ];
-     public function patient()
+
+    public function patient()
     {
         return $this->belongsTo(Patient::class, 'patient_id');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    public function lens()
+    {
+        return $this->belongsTo(Product::class, 'lens_id');
     }
 }

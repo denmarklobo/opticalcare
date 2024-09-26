@@ -127,31 +127,38 @@ class ProductController extends Controller
 
     public function update(Request $request, $id)
     {
-        try {
-            $product = Product::findOrFail($id);
+        // Validate incoming data
+        $validator = Validator::make($request->all(), [
+            'quantity' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0',
+            'color_stock' => 'required|array',
+            'color_stock.*.color' => 'required|string|max:50',
+            'color_stock.*.stock' => 'required|integer|min:0'
+        ]);
 
-            // Validate incoming request data
-            $request->validate([
-                'product_name' => 'required|string',
-                'supplier' => 'required|string',
-                'quantity' => 'required|integer',
-                'price' => 'required|numeric',
-            ]);
-
-            // Update product attributes
-            $product->product_name = $request->input('product_name');
-            $product->supplier = $request->input('supplier');
-            $product->quantity = $request->input('quantity');
-            $product->price = $request->input('price');
-
-            // Save the updated product
-            $product->save();
-
-            return response()->json($product);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Product not found or could not be updated'], 404);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
         }
+
+        // Find the product by ID
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+
+        // Update product details
+        $product->quantity = $request->quantity;
+        $product->price = $request->price;
+        $product->color_stock = json_encode($request->color_stock); // Encode as JSON if needed
+
+        // Save the product
+        $product->save();
+
+        return response()->json(['message' => 'Product updated successfully', 'product' => $product], 200);
     }
+
+
     public function destroy(Product $product)
     {
         $product->delete();

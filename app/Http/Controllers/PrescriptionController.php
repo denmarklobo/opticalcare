@@ -33,10 +33,10 @@ class PrescriptionController extends Controller
 
     public function show($patient_id, $prescription_id)
     {
-        // Fetch the prescription for the specified patient ID and prescription ID
-        $prescription = Prescription::where('patient_id', $patient_id)
-                                     ->where('prescription_id', $prescription_id)
-                                     ->first();
+        $prescription = Prescription::with('patient') 
+                                    ->where('patient_id', $patient_id)
+                                    ->where('prescription_id', $prescription_id)
+                                    ->first();
 
         if (!$prescription) {
             return response()->json(['error' => 'Prescription not found for the specified patient'], 404);
@@ -44,6 +44,7 @@ class PrescriptionController extends Controller
 
         return response()->json($prescription);
     }
+
 
     public function update(Request $request, $patient_id, $prescription_id)
     {

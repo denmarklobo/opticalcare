@@ -20,6 +20,11 @@ class CreateGlassTable extends Migration
             $table->unsignedBigInteger('patient_id')->nullable(); // Add the foreign key column
             $table->foreign('patient_id')->references('id')->on('patients')->onDelete('set null'); // Define the foreign key constraint
             $table->timestamps();
+            $table->unsignedBigInteger('product_id')->nullable(); // Add the foreign key column
+            $table->foreign('product_id')->references('id')->on('products')->onDelete('set null');
+            $table->unsignedBigInteger('lens_id')->nullable(); // Add the foreign key column
+            $table->foreign('lens_id')->references('id')->on('products')->onDelete('set null');
+            $table->decimal('price', 10, 2);
         });
     }
 

@@ -5,33 +5,45 @@ namespace App\Http\Controllers;
 use App\Models\Glass;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Product;
 
 class GlassController extends Controller
 {
     public function index($patient_id)
     {
-        $glasses = Glass::where('patient_id', $patient_id)->get();
+        $glasses = Glass::where('patient_id', $patient_id)
+            ->with(['product', 'lens']) 
+            ->get();
+
         return response()->json($glasses);
     }
+
 
     public function store(Request $request)
     {
         try {
             $request->validate([
-                // Validate your request fields here
                 'patient_id' => 'required',
-                // Add other validation rules as needed
+                'product_id' => 'required', 
+                'lens_id' =>'required',
             ]);
 
-            // Create a new prescription for the specified patient ID (assuming Glass model)
             $glassData = $request->all();
             $glass = Glass::create($glassData);
+
+            // Decrement the product quantity
+            $product = Product::findOrFail($glass->product_id); 
+            $product->decrement('quantity', 1);
+
+            $product = Product::findOrFail($glass->lens_id); 
+            $product->decrement('quantity', 1);
 
             return response()->json($glass, 201);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
 
     public function show($patient_id, $glass_id)
     {
