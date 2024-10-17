@@ -16,7 +16,9 @@ class Glass extends Model
         'remarks',
         'product_id',
         'lens_id',
-        'price'
+        'price',
+        'custom_frame',
+        'custom_lens',
     ];
 
     public function patient()

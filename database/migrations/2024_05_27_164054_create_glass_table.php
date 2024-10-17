@@ -25,6 +25,8 @@ class CreateGlassTable extends Migration
             $table->unsignedBigInteger('lens_id')->nullable(); // Add the foreign key column
             $table->foreign('lens_id')->references('id')->on('products')->onDelete('set null');
             $table->decimal('price', 10, 2);
+            $table->string('custom_lens')->nullable();
+            $table->string('custom_frame')->nullable();
         });
     }
 

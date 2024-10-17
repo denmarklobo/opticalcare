@@ -19,24 +19,40 @@ class GlassController extends Controller
     }
 
 
-    public function store(Request $request)
+   public function store(Request $request)
     {
         try {
             $request->validate([
                 'patient_id' => 'required',
-                'product_id' => 'required', 
-                'lens_id' =>'required',
+                'product_id' => 'required', // This can be either an existing product or "other"
+                'lens_id' => 'required',    // This can be either an existing lens or "other"
             ]);
 
             $glassData = $request->all();
+
+            // If 'product_id' is 'other', store the custom frame directly in the 'Glass' model
+            if ($request->product_id === 'other') {
+                $glassData['custom_frame'] = $request->input('customFrame'); // Assuming you have a 'custom_frame' column in the 'Glass' model
+                $glassData['product_id'] = null; // No product ID for custom frames
+            }
+
+            // If 'lens_id' is 'other', store the custom lens directly in the 'Glass' model
+            if ($request->lens_id === 'other') {
+                $glassData['custom_lens'] = $request->input('customLens'); // Assuming you have a 'custom_lens' column in the 'Glass' model
+                $glassData['lens_id'] = null; // No lens ID for custom lenses
+            }
+
             $glass = Glass::create($glassData);
 
-            // Decrement the product quantity
-            $product = Product::findOrFail($glass->product_id); 
-            $product->decrement('quantity', 1);
+            if ($glass->product_id) {
+                $product = Product::findOrFail($glass->product_id);
+                $product->decrement('quantity', 1);
+            }
 
-            $product = Product::findOrFail($glass->lens_id); 
-            $product->decrement('quantity', 1);
+            if ($glass->lens_id) {
+                $lens = Product::findOrFail($glass->lens_id);
+                $lens->decrement('quantity', 1);
+            }
 
             return response()->json($glass, 201);
         } catch (\Exception $e) {

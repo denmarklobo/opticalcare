@@ -28,6 +28,7 @@ Route::post('/reserve', [ReservationController::class, 'store']);
 Route::get('/reservations', [ReservationController::class, 'accepted']);
 Route::get('/reservations/pending', [ReservationController::class, 'pending']);
 Route::get('/reservations/picked_up', [ReservationController::class, 'pickedUp']);
+Route::post('/reservations/{id}/send-email', [ReservationController::class, 'sendEmail']);
 
 Route::get('/reservations/total', [ReservationController::class, 'index']);
 Route::get('/reservations/counts', [ReservationController::class, 'reservationStatusCounts']);

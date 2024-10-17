@@ -15,6 +15,7 @@ class Reservation extends Model
         'status',
         'picked_up_date',
         'color',
+        'quantity',
     ];
 
     protected $casts = [

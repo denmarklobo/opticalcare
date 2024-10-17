@@ -10,6 +10,8 @@ use App\Models\Patient;
 use App\Models\Product;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ExampleEmail;
 
 
 class ReservationController extends Controller
@@ -83,6 +85,8 @@ class ReservationController extends Controller
             'product_name' => 'required|string',
             'user_id' => 'required|exists:users,id',
             'color' => 'required|string',  // Add validation for color
+            'quantity' => 'required|integer|min:1'
+
         ]);
 
         // Create a new reservation with the validated data
@@ -91,6 +95,7 @@ class ReservationController extends Controller
             'product_id' => $validatedData['product_id'],
             'product_name' => $validatedData['product_name'],
             'color' => $validatedData['color'],  // Store the color
+            'quantity' => $validatedData['quantity'],
             'status' => 'pending',
         ]);
 
@@ -106,15 +111,22 @@ class ReservationController extends Controller
      */
     public function accept($id)
     {
+        try {
+            $reservation = Reservation::findOrFail($id);
+            $reservation->status = 'accepted';
+            $reservation->save();
 
-        $reservation = Reservation::findOrFail($id);
+            // Send the email with the reservation details
+            Mail::to($reservation->patient->email)->send(new ExampleEmail($reservation));
 
-        $reservation->status = 'accepted';
-        $reservation->save();
-
-        return response()->json($reservation);
+            return response()->json([
+                'reservation' => $reservation,
+                'message' => 'Reservation accepted and email sent successfully.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to accept reservation: ' . $e->getMessage()], 500);
+        }
     }
-
     /**
      * Decline a reservation.
      *
@@ -201,26 +213,30 @@ class ReservationController extends Controller
             return response()->json(['message' => 'Reservation is already picked up'], 400);
         }
 
+        // Update reservation status and picked up date
         $reservation->status = 'picked_up';
         $reservation->picked_up_date = now(); 
         $reservation->save();
 
+        // Fetch the associated product
         $product = Product::findOrFail($reservation->product_id);
 
-        if ($product->quantity > 0) {
-            // Update the product quantity
-            $product->quantity -= 1;
+        // Check if the total product quantity is greater than or equal to the reserved quantity
+        if ($product->quantity >= $reservation->quantity) {
+            // Deduct the reserved quantity from the total product quantity
+            $product->quantity -= $reservation->quantity;
 
             // Decode the color_stock JSON field
             $colorStocks = json_decode($product->color_stock, true);
 
-            // Flag to check if the color was updated
+            // Flag to check if the color stock was updated
             $colorUpdated = false;
 
-            // Update the color-specific stock
+            // Loop through the color stock and update the specific color
             foreach ($colorStocks as &$colorStock) {
                 if ($colorStock['color'] === $reservation->color) {
-                    $colorStock['stock'] -= 1;
+                    // Deduct the reserved quantity from the color-specific stock
+                    $colorStock['stock'] -= $reservation->quantity;
                     if ($colorStock['stock'] < 0) {
                         $colorStock['stock'] = 0; // Ensure stock does not go below zero
                     }
@@ -229,6 +245,7 @@ class ReservationController extends Controller
                 }
             }
 
+            // If the color stock was updated, save the changes
             if ($colorUpdated) {
                 // Encode the updated color_stock back to JSON
                 $product->color_stock = json_encode($colorStocks);
@@ -237,9 +254,30 @@ class ReservationController extends Controller
                 return response()->json(['message' => 'Color stock not found'], 400);
             }
         } else {
-            return response()->json(['message' => 'Product is out of stock'], 400);
+            return response()->json(['message' => 'Not enough stock available for the reserved quantity'], 400);
         }
 
         return response()->json(['message' => 'Reservation marked as picked up and product stock updated', 'reservation' => $reservation], 200);
     }
+
+    public function sendEmail($id)
+    {
+        try {
+            // Fetch the reservation by ID
+            $reservation = Reservation::findOrFail($id);
+
+            // Send the email using the ReservationEmail mailable
+            Mail::to($reservation->patient->email)->send(new ReservationEmail($reservation));
+
+            return response()->json([
+                'message' => 'Email sent successfully.'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to send email.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 }
