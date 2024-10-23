@@ -19,6 +19,9 @@ class Glass extends Model
         'price',
         'custom_frame',
         'custom_lens',
+        'date',
+        'balance',
+        'due_date'
     ];
 
     public function patient()

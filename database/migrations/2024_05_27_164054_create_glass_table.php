@@ -27,6 +27,9 @@ class CreateGlassTable extends Migration
             $table->decimal('price', 10, 2);
             $table->string('custom_lens')->nullable();
             $table->string('custom_frame')->nullable();
+            $table->string('date')->nullable();
+            $table->string('due_date')->nullable();
+            $table->integer('balance');
         });
     }
 

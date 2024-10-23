@@ -21,6 +21,7 @@ class CreateHistoriesTable extends Migration
             $table->unsignedBigInteger('patient_id')->nullable(); // Add the foreign key column
             $table->foreign('patient_id')->references('id')->on('patients')->onDelete('set null'); // Define the foreign key constraint
             $table->timestamps();
+            $table->string('date')->nullable();
         });
     }
 

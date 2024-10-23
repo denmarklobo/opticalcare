@@ -39,21 +39,34 @@ class HistoryController extends Controller
         }
     }
 
-    public function show(History $history)
+    public function show($patient_id, $historyId)
     {
-        return response()->json($history);
+        $prescription = History::with('patient') 
+                                    ->where('patient_id', $patient_id)
+                                    ->where('id', $historyId)
+                                    ->first();
+
+        if (!$prescription) {
+            return response()->json(['error' => 'Prescription not found for the specified patient'], 404);
+        }
+
+        return response()->json($prescription);
     }
 
-    public function update(Request $request, History $history)
+    public function update(Request $request, $patient_id, $historyId)
     {
         try {
             $request->validate([
-                'history_updated' => 'nullable|date',
                 'medical_history' => 'nullable|string',
                 'ocular_history' => 'nullable|string',
             ]);
 
+            $history = History::where('patient_id', $patient_id)
+                ->where('id', $historyId)
+                ->first();
+
             $history->update($request->all());
+            $history->save();
 
             return response()->json($history, 200);
         } catch (\Exception $e) {

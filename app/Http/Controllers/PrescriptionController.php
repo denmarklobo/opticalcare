@@ -31,11 +31,11 @@ class PrescriptionController extends Controller
         }
     }
 
-    public function show($patient_id, $prescription_id)
+    public function show($patient_id, $prescriptionId)
     {
         $prescription = Prescription::with('patient') 
                                     ->where('patient_id', $patient_id)
-                                    ->where('prescription_id', $prescription_id)
+                                    ->where('id', $prescriptionId)
                                     ->first();
 
         if (!$prescription) {
@@ -46,29 +46,42 @@ class PrescriptionController extends Controller
     }
 
 
-    public function update(Request $request, $patient_id, $prescription_id)
+    public function update(Request $request, $patient_id, $prescriptionId)
     {
         try {
+            // Validate your request fields here
             $request->validate([
-                // Validate your request fields here
+                'right_eye_sphere' => 'required|string',
+                'left_eye_sphere' => 'required|string',
+                'right_eye_cylinder' => 'required|string',
+                'left_eye_cylinder' => 'required|string',
+                'right_eye_axis' => 'required|string',
+                'left_eye_axis' => 'required|string',
+                'reading_add' => 'required|string',
+                'PD' => 'required|string',
+                'right_eye_best_visual_acuity' => 'required|string',
+                'left_eye_best_visual_acuity' => 'required|string',
             ]);
 
             // Update the prescription if it belongs to the specified patient
             $prescription = Prescription::where('patient_id', $patient_id)
-                                         ->where('id', $prescription_id)
-                                         ->first();
+                ->where('id', $prescriptionId)
+                ->first();
 
             if (!$prescription) {
                 return response()->json(['error' => 'Prescription not found for the specified patient'], 404);
             }
 
-            $prescription->update($request->all());
+            // Update the prescription with validated data
+            $prescription->fill($request->all());
+            $prescription->save();
 
             return response()->json($prescription, 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
 
         public function destroy(Request $request, $patient_id, $prescription_id)
         {

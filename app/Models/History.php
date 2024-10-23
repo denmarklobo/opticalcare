@@ -14,6 +14,7 @@ class History extends Model
         'history_updated',
         'medical_history',
         'ocular_history',
+        'date',
     ];
 
     public function patient()

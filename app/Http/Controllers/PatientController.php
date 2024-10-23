@@ -25,7 +25,7 @@ class PatientController extends Controller
                 'password' => 'required|min:6',
                 'address' => 'required',
                 'contact' => 'required',
-                'birthdate' => 'required|date',
+                // 'birthdate' => 'required|date',
             ]); 
 
             $hashedPassword = Hash::make($request->password);

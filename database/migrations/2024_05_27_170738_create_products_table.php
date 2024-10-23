@@ -25,6 +25,7 @@ class CreateProductsTable extends Migration
             $table->enum('gender', ['Men', 'Women', 'Unisex']);
             $table->enum('type', ['Frames', 'Lens', 'Contact Lenses', 'Accessories']);
             $table->timestamps();
+            $table->integer('new_stock_added')->default(0);
         });
     }
 

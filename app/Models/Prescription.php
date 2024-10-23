@@ -23,6 +23,7 @@ class Prescription extends Model
         'right_eye_best_visual_acuity',
         'PD',
         'date',
+        'create_at',
     ];
 
     public function patient()

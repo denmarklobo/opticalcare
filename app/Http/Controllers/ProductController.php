@@ -32,20 +32,40 @@ class ProductController extends Controller
     public function newIndex()
     {
         $products = Product::all()->map(function ($product) {
-            // Decode the JSON array of images
+            // Decode the main product images
             $images = json_decode($product->image);
 
-            // Check if there are any images
-            if (!empty($images) && is_array($images)) {
-                // Map each image path to its URL
-                $product->images = array_map(function ($image) {
-                    return asset('http://127.0.0.1:8000/' . $image);
-                }, $images);
-            } else {
-                $product->images = []; // Set to an empty array if no images found
-            }
+        if (!empty($images) && is_array($images)) {
+            $product->images = array_map(function ($image) {
+                return asset('http://127.0.0.1:8000/' . $image);
+            }, $images);
+        } else {
+            $product->images = [];
+        }
 
-            // Optionally, remove the original image attribute if you only want to return the new images attribute
+            // Process color_stock to update image paths
+            $colorStock = json_decode($product->color_stock, true); // Decode the color_stock JSON
+        if (!empty($colorStock) && is_array($colorStock)) {
+            foreach ($colorStock as &$color) {
+                if (!empty($color['image'])) {
+                    // Update the image path for each color stock
+                    $color['image'] = asset('http://127.0.0.1:8000/' . $color['image']);
+                } else {
+                    // Set to null or empty if no image
+                    $color['image'] = null; // or [] if you prefer an empty array
+                }
+            }
+        }
+
+            // Assign the updated color_stock back to the product
+            $product->color_stock = $product->color_stock; // This line is optional, just to clarify that you're setting it
+
+            // Other properties
+            $product->total_sold = $product->totalSold();
+            $product->sold_per_color = $product->soldPerColor();
+            $product->new_stock_added = $product->new_stock_added;
+
+            // Remove the old image field
             unset($product->image);
 
             return $product;
@@ -53,6 +73,10 @@ class ProductController extends Controller
 
         return response()->json($products);
     }
+
+
+
+
 
     public function store(Request $request)
     {
@@ -64,15 +88,14 @@ class ProductController extends Controller
             'product_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'gender' => 'required|in:Men,Women,Unisex',
             'type' => 'required|in:Frames,Lens,Contact Lenses,Accessories',
-            'color_stock' => 'required|json', // Validate that color_stock is a valid JSON object
+            'color_stock' => 'required|json',
+            'color_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 400);
         }
-
-        // Initialize an array to hold image paths
-        $productImages = [];
+         $productImages = [];
 
         // Check if there are images in the request
         if ($request->hasFile('product_images')) {
@@ -83,22 +106,41 @@ class ProductController extends Controller
             }
         }
 
-        // Create a new product with the given details and save image paths and color_stock as JSON
+        $colorStock = json_decode($request->input('color_stock'), true);
+        $colorImages = [];
+
+        // Handle color images upload
+        foreach ($colorStock as $index => $color) {
+            if ($request->hasFile("color_images.$index")) {
+                $imagePath = $request->file("color_images.$index")->store('color_images', 'public');
+                $colorImages[$index] = $imagePath;
+            }
+        }
+
+        // Merge color images with color stock
+        foreach ($colorStock as $index => &$color) {
+            if (isset($colorImages[$index])) {
+                $color['image'] = $colorImages[$index];
+            }
+        }
+
+        // Create a new product with the given details and save color stock as JSON
         $product = new Product([
             'product_name' => $request->product_name,
             'supplier' => $request->supplier,
             'quantity' => $request->quantity,
+            'image' => json_encode($productImages),
             'price' => $request->price,
-            'image' => json_encode($productImages), // Store multiple images as a JSON array
             'gender' => $request->input('gender'),
             'type' => $request->input('type'),
-            'color_stock' => $request->input('color_stock'), // Store color_stock JSON as is
+            'color_stock' => json_encode($colorStock), // Store color_stock JSON with image paths
         ]);
 
         $product->save();
 
         return response()->json($product, 201);
     }
+
 
 
     public function show($id)
@@ -122,41 +164,86 @@ class ProductController extends Controller
             $product->images = []; // Return an empty array if no images found
         }
 
+        $colorStock = json_decode($product->color_stock, true); // Decode the color_stock JSON
+        if (!empty($colorStock) && is_array($colorStock)) {
+            foreach ($colorStock as &$color) {
+                if (!empty($color['image'])) {
+                    // Update the image path for each color stock
+                    $color['image'] = asset('http://127.0.0.1:8000/' . $color['image']);
+                } else {
+                    // Set to null or empty if no image
+                    $color['image'] = null; // or [] if you prefer an empty array
+                }
+            }
+        }
+
         return response()->json($product);
     }
 
-    public function update(Request $request, $id)
-    {
-        // Validate incoming data
-        $validator = Validator::make($request->all(), [
-            'quantity' => 'required|integer|min:0',
-            'price' => 'required|numeric|min:0',
-            'color_stock' => 'required|array',
-            'color_stock.*.color' => 'required|string|max:50',
-            'color_stock.*.stock' => 'required|integer|min:0'
-        ]);
+   public function update(Request $request, $id)
+{
+    // Validate incoming data
+    $validator = Validator::make($request->all(), [
+        'quantity' => 'required|integer|min:0',
+        'price' => 'required|numeric|min:0',
+        'color_stock' => 'required|array',
+        'color_stock.*.color' => 'required|string|max:50',
+        'color_stock.*.stock' => 'required|integer|min:0',
+        'color_stock.*.restockQuantity' => 'required|integer|min:0'
+        // Ensure color_stock.*.image is optional if you want to keep it unchanged
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        // Find the product by ID
-        $product = Product::find($id);
-
-        if (!$product) {
-            return response()->json(['message' => 'Product not found'], 404);
-        }
-
-        // Update product details
-        $product->quantity = $request->quantity;
-        $product->price = $request->price;
-        $product->color_stock = json_encode($request->color_stock); // Encode as JSON if needed
-
-        // Save the product
-        $product->save();
-
-        return response()->json(['message' => 'Product updated successfully', 'product' => $product], 200);
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
     }
+
+    // Find the product by ID
+    $product = Product::find($id);
+
+    if (!$product) {
+        return response()->json(['message' => 'Product not found'], 404);
+    }
+
+    // Update product details
+    $product->quantity = $request->quantity;
+    $product->price = $request->price;
+
+    // Prepare color stock for updating
+    $updatedColorStock = [];
+    $newStockTotal = 0; // Variable to hold the total new stock added
+
+    foreach ($request->color_stock as $colorStock) {
+        // Calculate new stock total from restock quantities
+        $newStockTotal += $colorStock['restockQuantity'];
+        
+        // Create updated color stock array, keeping the image unchanged
+        $updatedColorStock[] = [
+            'color' => $colorStock['color'],
+            'stock' => $colorStock['stock'],
+            'restockQuantity' => $colorStock['restockQuantity'], // Include restock quantity for each color
+            'image' => $colorStock['image'] ?? null // Keep the image field as is (null if not provided)
+        ];
+    }
+
+    // Encode updated color stock to JSON
+    $product->color_stock = json_encode($updatedColorStock);
+    
+    // Reset new_stock_added to the total new stock from the current update
+    $product->new_stock_added = $newStockTotal;
+
+    // Save the product
+    $product->save();
+
+    return response()->json([
+        'message' => 'Product updated successfully',
+        'product' => $product,
+        'newStockAdded' => $newStockTotal // Return the total new stock added
+    ], 200);
+}
+
+
+
+
 
 
     public function destroy(Product $product)

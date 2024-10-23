@@ -78,28 +78,44 @@ class GlassController extends Controller
     public function update(Request $request, $patient_id, $glass_id)
     {
         try {
-            $request->validate([
-                // Validate your request fields here
-                'patient_id' => 'required',
-                // Add other validation rules as needed
-            ]);
-
-            // Update the prescription if it belongs to the specified patient (assuming Glass model)
-            $glass = Glass::where('patient_id', $patient_id)
-                          ->where('id', $glass_id)
-                          ->first();
-
+            $glass = Glass::find($glass_id); // Use 'find' instead of 'findOrFail'
+            
+            // Check if the record exists
             if (!$glass) {
-                return response()->json(['error' => 'Glass not found for the specified patient'], 404);
+                return response()->json(['error' => 'Glass record not found'], 404);
             }
 
-            $glass->update($request->all());
+            // Proceed with the rest of the update logic
+            $request->validate([
+                'patient_id' => 'required',
+                'product_id' => 'required', // This can be either an existing product or "other"
+                'lens_id' => 'required',    // This can be either an existing lens or "other"
+            ]);
+
+            $glassData = $request->all();
+
+            // If 'product_id' is 'other', store the custom frame directly in the 'Glass' model
+            if ($request->product_id === 'other') {
+                $glassData['custom_frame'] = $request->input('customFrame');
+                $glassData['product_id'] = null; // No product ID for custom frames
+            }
+
+            // If 'lens_id' is 'other', store the custom lens directly in the 'Glass' model
+            if ($request->lens_id === 'other') {
+                $glassData['custom_lens'] = $request->input('customLens');
+                $glassData['lens_id'] = null; // No lens ID for custom lenses
+            }
+
+            // Update the Glass record
+            $glass->update($glassData);
 
             return response()->json($glass, 200);
+
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+    
     public function destroy(Request $request, $patient_id, $glasses_id)
         {
             // Validate the request parameters

@@ -25,6 +25,7 @@ Route::delete('/products/{product}', [ProductController::class, 'destroy']);
 Route::get('/products/latest', [ProductController::class, 'getLatestProducts']);
 
 Route::post('/reserve', [ReservationController::class, 'store']);
+Route::post('/adminReserve', [ReservationController::class, 'adminReserve']);
 Route::get('/reservations', [ReservationController::class, 'accepted']);
 Route::get('/reservations/pending', [ReservationController::class, 'pending']);
 Route::get('/reservations/picked_up', [ReservationController::class, 'pickedUp']);
@@ -45,8 +46,8 @@ Route::prefix('patients')->group(function () {
 
     Route::get('/{patient_id}/history', [HistoryController::class, 'index']);
     Route::post('/{patient_id}/history', [HistoryController::class, 'store']);
-    Route::get('/history/{history}', [HistoryController::class, 'show']);
-    Route::put('/history/{history}', [HistoryController::class, 'update']);
+    Route::get('/{patient_id}/history/{history_id}', [HistoryController::class, 'show']);
+    Route::put('/{patient_id}/history/{history_id}', [HistoryController::class, 'update']);
     Route::delete('/{patient_id}/history/{history_id}', [HistoryController::class, 'destroy']);
 
     Route::get('/{patient_id}/glasses', [GlassController::class, 'index']);

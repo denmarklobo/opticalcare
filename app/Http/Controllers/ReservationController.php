@@ -103,6 +103,30 @@ class ReservationController extends Controller
         return response()->json($reservation, 201);
     }
 
+    public function adminReserve(Request $request)
+    {
+        // Validate the incoming request data, including the color
+        $validatedData = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'user_id' => 'required|exists:users,id',
+            'color' => 'required|string',  // Add validation for color
+            'quantity' => 'required|integer|min:1'
+
+        ]);
+
+        // Create a new reservation with the validated data
+        $reservation = Reservation::create([
+            'user_id' => $validatedData['user_id'],
+            'product_id' => $validatedData['product_id'],
+            'color' => $validatedData['color'],  // Store the color
+            'quantity' => $validatedData['quantity'],
+            'status' => 'accepted',
+        ]);
+
+        // Return a JSON response with the created reservation
+        return response()->json($reservation, 201);
+    }
+
     /**
      * Accept a reservation.
      *
@@ -163,24 +187,36 @@ class ReservationController extends Controller
         }
     }
 
-    public function accountsCreatedPerMonth()
-   {
+    public function accountsCreatedPerMonth(Request $request)
+    {
+        // Validate the year parameter
+         $request->validate([
+            'year' => 'required|integer|min:2000|max:2030',
+        ]);
+        // Get the year from the request
+        $year = $request->query('year');
+
+        // Fetch accounts created per month for the specified year
         $accountsPerMonth = Patient::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
+            ->whereYear('created_at', $year) // Filter by year
             ->groupBy('month')
             ->pluck('count', 'month');
 
+        // Define month names
         $months = [
             1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'May', 6 => 'Jun',
             7 => 'Jul', 8 => 'Aug', 9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dec'
         ];
 
+        // Prepare the response data
         $data = [];
         foreach ($months as $num => $name) {
-            $data[strtolower($name)] = $accountsPerMonth->get($num, 0);
+            $data[strtolower($name)] = $accountsPerMonth->get($num, 0); // Default to 0 if no accounts
         }
 
         return response()->json($data);
     }
+
 
       public function getUserReservations($userId)
     {
