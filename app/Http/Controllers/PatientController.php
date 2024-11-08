@@ -100,11 +100,17 @@ class PatientController extends Controller
     public function destroy(Patient $patient)
     {
         try {
+            // Check if the patient has an associated user
+            if ($patient->user) {
+                $patient->user->delete(); // Delete the user record
+            }
+            
+            // Delete the patient record
             $patient->delete();
 
-            return response()->json(null, 204);
+            return response()->json(null, 204); // Return no content response for successful deletion
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => $e->getMessage()], 500); // Return error response
         }
     }
 }

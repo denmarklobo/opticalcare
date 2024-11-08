@@ -84,7 +84,7 @@ class ReservationController extends Controller
             'product_id' => 'required|exists:products,id',
             'product_name' => 'required|string',
             'user_id' => 'required|exists:users,id',
-            'color' => 'required|string',  // Add validation for color
+            'color' => 'nullable|string',  // Add validation for color
             'quantity' => 'required|integer|min:1'
 
         ]);
@@ -94,7 +94,7 @@ class ReservationController extends Controller
             'user_id' => $validatedData['user_id'],
             'product_id' => $validatedData['product_id'],
             'product_name' => $validatedData['product_name'],
-            'color' => $validatedData['color'],  // Store the color
+            'color' => $validatedData['color'] ?? null,  // Store the color
             'quantity' => $validatedData['quantity'],
             'status' => 'pending',
         ]);
@@ -109,7 +109,7 @@ class ReservationController extends Controller
         $validatedData = $request->validate([
             'product_id' => 'required|exists:products,id',
             'user_id' => 'required|exists:users,id',
-            'color' => 'required|string',  // Add validation for color
+            'color' => 'nullable|string',  // Add validation for color
             'quantity' => 'required|integer|min:1'
 
         ]);
@@ -118,7 +118,7 @@ class ReservationController extends Controller
         $reservation = Reservation::create([
             'user_id' => $validatedData['user_id'],
             'product_id' => $validatedData['product_id'],
-            'color' => $validatedData['color'],  // Store the color
+            'color' => $validatedData['color'] ?? null,  // Store the color
             'quantity' => $validatedData['quantity'],
             'status' => 'accepted',
         ]);

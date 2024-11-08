@@ -8,11 +8,12 @@ use App\Models\Patient;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
 class LoginController extends Controller
+
 {
-    public function authenticate(Request $request)
-    {
+    public function authenticate(Request $request) {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required',
@@ -26,25 +27,40 @@ class LoginController extends Controller
         }
 
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-            // Authentication successful, retrieve the authenticated user
             $user = Auth::user();
 
-            // Generate token for the user
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            // Return success response with token and user id
             return response()->json([
                 'message' => 'Authenticated',
                 'access_token' => $token,
                 'token_type' => 'Bearer',
-                'id' => $user->id, // Include the user ID in the response
+                'id' => $user->id,
             ], 200);
         }
 
-        // Authentication failed, return error response
         return response()->json([
             'message' => 'Unauthenticated',
         ], 401);
+   }
+
+    use AuthenticatesUsers;
+
+    /**
+     * Where to redirect users after login.
+     *
+     * @var string
+     */
+    protected $redirectTo = '/home';
+
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('guest')->except('logout');
+        $this->middleware('auth')->only('logout');
     }
 }
-

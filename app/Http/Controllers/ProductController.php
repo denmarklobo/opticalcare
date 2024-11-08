@@ -74,10 +74,6 @@ class ProductController extends Controller
         return response()->json($products);
     }
 
-
-
-
-
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -141,8 +137,6 @@ class ProductController extends Controller
         return response()->json($product, 201);
     }
 
-
-
     public function show($id)
     {
         $product = Product::find($id);
@@ -181,65 +175,45 @@ class ProductController extends Controller
     }
 
    public function update(Request $request, $id)
-{
-    // Validate incoming data
-    $validator = Validator::make($request->all(), [
-        'quantity' => 'required|integer|min:0',
-        'price' => 'required|numeric|min:0',
-        'color_stock' => 'required|array',
-        'color_stock.*.color' => 'required|string|max:50',
-        'color_stock.*.stock' => 'required|integer|min:0',
-        'color_stock.*.restockQuantity' => 'required|integer|min:0'
-        // Ensure color_stock.*.image is optional if you want to keep it unchanged
-    ]);
+    {
+        $validator = Validator::make($request->all(), [
+            'quantity' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0',
+            'color_stock' => 'required|array',
+            'color_stock.*.color' => 'required|string|max:50',
+            'color_stock.*.stock' => 'required|integer|min:0',
+            'color_stock.*.restockQuantity' => 'required|integer|min:0',
+            'color_stock.*.image' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048', // Image validation
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 422);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Fetch product
+        $product = Product::findOrFail($id);
+
+        // Update product attributes
+        $product->quantity = $request->input('quantity');
+        $product->price = $request->input('price');
+
+        $colorStockData = [];
+        foreach ($request->input('color_stock') as $index => $colorStock) {
+            // Handle image upload
+            if ($request->hasFile("color_stock.{$index}.image")) {
+                $imagePath = $request->file("color_stock.{$index}.image")->store('public/color_stock');
+                $colorStock['image'] = Storage::url($imagePath); // Save the image URL
+            }
+
+            $colorStockData[] = $colorStock;
+        }
+
+        // Save color stock data to the product
+        $product->color_stock = json_encode($colorStockData);
+        $product->save();
+
+        return response()->json(['message' => 'Product updated successfully']);
     }
-
-    // Find the product by ID
-    $product = Product::find($id);
-
-    if (!$product) {
-        return response()->json(['message' => 'Product not found'], 404);
-    }
-
-    // Update product details
-    $product->quantity = $request->quantity;
-    $product->price = $request->price;
-
-    // Prepare color stock for updating
-    $updatedColorStock = [];
-    $newStockTotal = 0; // Variable to hold the total new stock added
-
-    foreach ($request->color_stock as $colorStock) {
-        // Calculate new stock total from restock quantities
-        $newStockTotal += $colorStock['restockQuantity'];
-        
-        // Create updated color stock array, keeping the image unchanged
-        $updatedColorStock[] = [
-            'color' => $colorStock['color'],
-            'stock' => $colorStock['stock'],
-            'restockQuantity' => $colorStock['restockQuantity'], // Include restock quantity for each color
-            'image' => $colorStock['image'] ?? null // Keep the image field as is (null if not provided)
-        ];
-    }
-
-    // Encode updated color stock to JSON
-    $product->color_stock = json_encode($updatedColorStock);
-    
-    // Reset new_stock_added to the total new stock from the current update
-    $product->new_stock_added = $newStockTotal;
-
-    // Save the product
-    $product->save();
-
-    return response()->json([
-        'message' => 'Product updated successfully',
-        'product' => $product,
-        'newStockAdded' => $newStockTotal // Return the total new stock added
-    ], 200);
-}
 
 
 

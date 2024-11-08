@@ -10,6 +10,12 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+
+Route::post('/password/email', [ResetPasswordController::class, 'sendResetLinkEmail']);
+
+Route::post('/password/reset', [ResetPasswordController::class, 'resetPassword']);
+
 
 Route::post('/login', [LoginController::class, 'authenticate']);
 Route::get('/authlogin', [AdminController::class, 'login']);
