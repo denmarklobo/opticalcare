@@ -29,6 +29,7 @@ Route::get('/viewProduct/{id}', [ProductController::class, 'show']);
 Route::put('/products/{id}', [ProductController::class, 'update']);
 Route::delete('/products/{product}', [ProductController::class, 'destroy']);
 Route::get('/products/latest', [ProductController::class, 'getLatestProducts']);
+Route::post('/upload-image', [ProductController::class, 'uploadImage']);
 
 Route::post('/reserve', [ReservationController::class, 'store']);
 Route::post('/adminReserve', [ReservationController::class, 'adminReserve']);

@@ -151,6 +151,10 @@ class ReservationController extends Controller
             return response()->json(['error' => 'Failed to accept reservation: ' . $e->getMessage()], 500);
         }
     }
+
+
+
+    
     /**
      * Decline a reservation.
      *

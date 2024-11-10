@@ -174,46 +174,99 @@ class ProductController extends Controller
         return response()->json($product);
     }
 
-   public function update(Request $request, $id)
+    public function uploadImage(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'quantity' => 'required|integer|min:0',
-            'price' => 'required|numeric|min:0',
-            'color_stock' => 'required|array',
-            'color_stock.*.color' => 'required|string|max:50',
-            'color_stock.*.stock' => 'required|integer|min:0',
-            'color_stock.*.restockQuantity' => 'required|integer|min:0',
-            'color_stock.*.image' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048', // Image validation
+        // Validate the image
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+        // Store the image and get the URL
+        $imagePath = $request->file('image')->store('color_images', 'public');
 
-        // Fetch product
-        $product = Product::findOrFail($id);
+        // Get the base URL, append 127.0.0.1, and return the full URL
+        $baseUrl = 'http://127.0.0.1:8000'; // Add your desired base URL
+        $imageUrl = asset('' . $imagePath);
 
-        // Update product attributes
-        $product->quantity = $request->input('quantity');
-        $product->price = $request->input('price');
+        // Concatenate the base URL with the image path
+        $fullImageUrl = $baseUrl . $imageUrl;
 
-        $colorStockData = [];
-        foreach ($request->input('color_stock') as $index => $colorStock) {
-            // Handle image upload
-            if ($request->hasFile("color_stock.{$index}.image")) {
-                $imagePath = $request->file("color_stock.{$index}.image")->store('public/color_stock');
-                $colorStock['image'] = Storage::url($imagePath); // Save the image URL
-            }
-
-            $colorStockData[] = $colorStock;
-        }
-
-        // Save color stock data to the product
-        $product->color_stock = json_encode($colorStockData);
-        $product->save();
-
-        return response()->json(['message' => 'Product updated successfully']);
+        // Return the full URL of the uploaded image
+        return response()->json([
+            'imageUrl' => $fullImageUrl,
+        ]);
     }
+
+
+    public function update(Request $request, $productId)
+{
+    // Validate the basic fields
+    $request->validate([
+        'product_name' => 'required|string|max:255',
+        'price' => 'required|numeric',
+        'quantity' => 'required|integer',
+        'color_stock' => 'required|array',
+        'color_stock.*.color' => 'required|string',
+        'color_stock.*.stock' => 'required|integer',
+    ]);
+
+    // Custom validation for the image field in color_stock
+    foreach ($request->input('color_stock') as $key => $color) {
+        $image = $color['image'] ?? null;
+
+        if ($image) {
+            // Check if the image is a valid URL
+            if (filter_var($image, FILTER_VALIDATE_URL)) {
+                // Optionally strip out the domain part
+                $color['image'] = preg_replace('/http:\/\/127\.0\.0\.1:8000\//', '', $image);
+            } else {
+                // Validate the image as a file
+                $request->validate([
+                    'color_stock.' . $key . '.image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Image validation
+                ]);
+            }
+        }
+    }
+
+    // Find the product
+    $product = Product::findOrFail($productId);
+
+    // Update basic product information
+    $product->product_name = $request->input('product_name');
+    $product->price = $request->input('price');
+    $product->quantity = $request->input('quantity');
+    
+    // Process the color_stock array
+    $colorStock = [];
+
+    foreach ($request->input('color_stock') as $color) {
+        if (isset($color['image']) && filter_var($color['image'], FILTER_VALIDATE_URL)) {
+            // Remove the domain part if it exists
+            $color['image'] = preg_replace('/http:\/\/127\.0\.0\.1:8000\//', '', $color['image']);
+        } elseif (isset($color['image']) && $color['image'] instanceof \Illuminate\Http\UploadedFile) {
+            // If the image is an uploaded file, store it and get the relative path
+            $imagePath = $color['image']->store('color_images', 'public');
+            $color['image'] = 'storage/' . $imagePath;
+        }
+
+        // Add the processed color stock to the array
+        $colorStock[] = $color;
+    }
+
+    // Update the color_stock field in the database
+    $product->color_stock = json_encode($colorStock);
+
+    // Save the updated product
+    $product->save();
+
+    return response()->json(['message' => 'Product updated successfully!']);
+}
+
+
+
+
+
+
 
 
 
