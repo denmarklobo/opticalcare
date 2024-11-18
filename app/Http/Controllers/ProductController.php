@@ -199,78 +199,87 @@ class ProductController extends Controller
 
 
     public function update(Request $request, $productId)
-{
-    // Validate the basic fields
-    $request->validate([
-        'product_name' => 'required|string|max:255',
-        'price' => 'required|numeric',
-        'quantity' => 'required|integer',
-        'color_stock' => 'required|array',
-        'color_stock.*.color' => 'required|string',
-        'color_stock.*.stock' => 'required|integer',
-    ]);
+    {
+        // Validate the basic fields
+        $request->validate([
+            'product_name' => 'required|string|max:255',
+            'price' => 'required|numeric',
+            'quantity' => 'required|integer',
+            'color_stock' => 'required|array',
+            'color_stock.*.color' => 'required|string',
+            'color_stock.*.stock' => 'required|integer',
+            'color_stock.*.restockQuantity' => 'required|integer|min:0'
+        ]);
 
-    // Custom validation for the image field in color_stock
-    foreach ($request->input('color_stock') as $key => $color) {
-        $image = $color['image'] ?? null;
+        // Custom validation for the image field in color_stock
+        foreach ($request->input('color_stock') as $key => $color) {
+            $image = $color['image'] ?? null;
 
-        if ($image) {
-            // Check if the image is a valid URL
-            if (filter_var($image, FILTER_VALIDATE_URL)) {
-                // Optionally strip out the domain part
-                $color['image'] = preg_replace('/http:\/\/127\.0\.0\.1:8000\//', '', $image);
-            } else {
-                // Validate the image as a file
-                $request->validate([
-                    'color_stock.' . $key . '.image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Image validation
-                ]);
+            if ($image) {
+                // Check if the image is a valid URL
+                if (filter_var($image, FILTER_VALIDATE_URL)) {
+                    // Optionally strip out the domain part
+                    $color['image'] = preg_replace('/http:\/\/127\.0\.0\.1:8000\//', '', $image);
+                } else {
+                    // Validate the image as a file
+                    $request->validate([
+                        'color_stock.' . $key . '.image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Image validation
+                    ]);
+                }
             }
         }
-    }
 
-    // Find the product
-    $product = Product::findOrFail($productId);
+        // Find the product
+        $product = Product::findOrFail($productId);
 
-    // Update basic product information
-    $product->product_name = $request->input('product_name');
-    $product->price = $request->input('price');
-    $product->quantity = $request->input('quantity');
-    
-    // Process the color_stock array
-    $colorStock = [];
+        // Update basic product information
+        $product->product_name = $request->input('product_name');
+        $product->price = $request->input('price');
+        $product->quantity = $request->input('quantity');
+        
+        // Process the color_stock array
+        $colorStock = [];
+        $updatedColorStock = [];
+        $newStockTotal = 0;
 
-    foreach ($request->input('color_stock') as $color) {
-        if (isset($color['image']) && filter_var($color['image'], FILTER_VALIDATE_URL)) {
-            // Remove the domain part if it exists
-            $color['image'] = preg_replace('/http:\/\/127\.0\.0\.1:8000\//', '', $color['image']);
-        } elseif (isset($color['image']) && $color['image'] instanceof \Illuminate\Http\UploadedFile) {
-            // If the image is an uploaded file, store it and get the relative path
-            $imagePath = $color['image']->store('color_images', 'public');
-            $color['image'] = 'storage/' . $imagePath;
+        foreach ($request->color_stock as $colorStock) {
+            // Calculate new stock total from restock quantities
+            $newStockTotal += $colorStock['restockQuantity'];
+            
+            // Create updated color stock array, keeping the image unchanged
+            $updatedColorStock[] = [
+                'color' => $colorStock['color'],
+                'stock' => $colorStock['stock'],
+                'restockQuantity' => $colorStock['restockQuantity'], // Include restock quantity for each color
+                'image' => $colorStock['image'] ?? null // Keep the image field as is (null if not provided)
+            ];
         }
 
-        // Add the processed color stock to the array
-        $colorStock[] = $color;
+        foreach ($request->input('color_stock') as $color) {
+            if (isset($color['image']) && filter_var($color['image'], FILTER_VALIDATE_URL)) {
+                // Remove the domain part if it exists
+                $color['image'] = preg_replace('/http:\/\/127\.0\.0\.1:8000\//', '', $color['image']);
+            } elseif (isset($color['image']) && $color['image'] instanceof \Illuminate\Http\UploadedFile) {
+                // If the image is an uploaded file, store it and get the relative path
+                $imagePath = $color['image']->store('color_images', 'public');
+                $color['image'] = 'storage/' . $imagePath;
+            }
+
+            // Add the processed color stock to the array
+            $colorStock[] = $color;
+        }
+
+        // Update the color_stock field in the database
+        $product->color_stock = json_encode($colorStock);
+        $product->color_stock = json_encode($updatedColorStock);
+
+        $product->new_stock_added = $newStockTotal;
+
+        // Save the updated product
+        $product->save();
+
+        return response()->json(['message' => 'Product updated successfully!']);
     }
-
-    // Update the color_stock field in the database
-    $product->color_stock = json_encode($colorStock);
-
-    // Save the updated product
-    $product->save();
-
-    return response()->json(['message' => 'Product updated successfully!']);
-}
-
-
-
-
-
-
-
-
-
-
 
 
     public function destroy(Product $product)

@@ -16,7 +16,7 @@ class PatientController extends Controller
         return response()->json($patients);
     }
 
-   public function store(Request $request)
+    public function store(Request $request)
     {
         try {
             $request->validate([

@@ -13,7 +13,7 @@ class AdminSeeder extends Seeder
         // Create an admin user with predefined credentials
         Admin::create([
             'name' => 'Admin',
-            'email' => 'admin@gmail.com',
+            'email' => 'mvcopticalclinic@gmail.com',
             'password' => Hash::make('password123'), // Replace with a secure password
             'role' => 'admin',
         ]);
