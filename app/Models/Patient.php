@@ -28,6 +28,11 @@ class Patient extends Model
     {
         return $this->hasMany(Prescription::class);
     }
+
+    public function glasses()
+    {
+        return $this->hasMany(Glass::class);
+    }
     
     public function reservations()
     {

@@ -37,6 +37,8 @@ Route::get('/reservations', [ReservationController::class, 'accepted']);
 Route::get('/reservations/pending', [ReservationController::class, 'pending']);
 Route::get('/reservations/picked_up', [ReservationController::class, 'pickedUp']);
 Route::post('/reservations/{id}/send-email', [ReservationController::class, 'sendEmail']);
+Route::get('/check-reservation/{product_id}', [ReservationController::class, 'checkReservation']);
+
 
 Route::get('/reservations/total', [ReservationController::class, 'index']);
 Route::get('/reservations/counts', [ReservationController::class, 'reservationStatusCounts']);
@@ -48,6 +50,8 @@ Route::put('/reservations/{id}/picked_up', [ReservationController::class, 'pickU
 
 Route::get('/reservations/{patientId}', [ReservationController::class, 'getUserReservations']);
 Route::delete('/reservations/{reservationId}', [ReservationController::class, 'cancelReservation']);
+
+Route::get('/glasses', [GlassController::class, 'newIndex']);
 
 Route::prefix('patients')->group(function () {
 

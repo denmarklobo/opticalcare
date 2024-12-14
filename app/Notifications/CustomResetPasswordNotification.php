@@ -25,7 +25,7 @@ class CustomResetPasswordNotification extends Notification
 
     public function toMail($notifiable)
     {
-        $url = url('http://localhost:5174//#/reset-password?token=' . $this->token . '&email=' . urlencode($notifiable->getEmailForPasswordReset()));
+        $url = url('https://opticare.website/#/reset-password?token=' . $this->token . '&email=' . urlencode($notifiable->getEmailForPasswordReset()));
 
         return (new MailMessage)
                     ->subject('Password Reset Request')

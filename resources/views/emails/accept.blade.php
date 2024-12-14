@@ -53,7 +53,7 @@
         <p><strong>Product:</strong> {{ $reservation->product->product_name }}</p>
         <p><strong>Quantity:</strong> {{ $reservation->quantity }}</p>
         
-        <a href="https://opticare.website/#/profile" class="button">View Your Reservation</a> <!-- Replace with actual link if needed -->
+        <a href="https://opticare.website/#/viewReservation?patient_id={{reservation->patient->id}}" class="button">View Your Reservation</a> <!-- Replace with actual link if needed -->
 
         <p class="footer">Thank you for choosing us!</p>
     </div>

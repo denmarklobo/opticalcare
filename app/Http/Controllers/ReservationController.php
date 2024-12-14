@@ -77,7 +77,7 @@ class ReservationController extends Controller
         return response()->json($reservation, 201);
     }
 
-   public function store(Request $request)
+    public function store(Request $request)
     {
         // Validate the incoming request data, including the color
         $validatedData = $request->validate([
@@ -318,6 +318,14 @@ class ReservationController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function checkReservation($productId) {
+        $hasPendingReservation = Reservation::where('product_id', $productId)
+                                            ->where('status', 'pending')
+                                            ->exists();
+
+        return response()->json(['hasPendingReservation' => $hasPendingReservation]);
     }
 
 }

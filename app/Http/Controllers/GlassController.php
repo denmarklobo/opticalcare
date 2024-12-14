@@ -18,6 +18,14 @@ class GlassController extends Controller
         return response()->json($glasses);
     }
 
+    public function newIndex()
+    {
+        $glasses = Glass::with(['product', 'lens']) // Load related data
+            ->get();
+
+        return response()->json($glasses);
+    }
+
 
    public function store(Request $request)
     {
